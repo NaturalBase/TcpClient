@@ -87,7 +87,7 @@ public class App implements ITcpHandlerProc
                 msg.put("Message", App.instance().MakeupMessage());
                 System.out.println("send message[" + counter + "]:" + msg.toJSONString());
                 counter++;
-                //client.send(msg.toJSONString());
+                client.send(msg.toJSONString());
                 post(SERVER_URL, msg.toJSONString());
                 synchronized(mainLoop){
                     mainLoop.wait(15000);
@@ -95,6 +95,7 @@ public class App implements ITcpHandlerProc
             }
             catch(Exception e){
                 e.printStackTrace();
+                isRun = false;
             }
         }
         System.out.println("main loop break, application exit!");

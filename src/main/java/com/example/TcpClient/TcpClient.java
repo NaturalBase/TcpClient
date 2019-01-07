@@ -102,8 +102,8 @@ public class TcpClient extends Thread{
             try{
                 while(isReceiveThreadRunning && (len = in.read(buffer)) != -1){
                     synchronized(objLockReceiveQueue){
-                        String msg = new String(buffer, "UTF-8");
-                        receiveQueue.offer(msg);
+                        String message = new String(buffer, 0, len, "UTF-8");
+                        receiveQueue.offer(message);
                     }
                 }
             }
