@@ -9,12 +9,12 @@ import java.io.OutputStream;
 
 public class TcpClient extends Thread{
     private final String SERVER_IP = "49.4.95.51";
-    private final int SERVER_PORT = 10086;
+    private final int SERVER_PORT = 10087;
 
     private Object objLockSendQueue = new Object();
-    private Queue<String> sendQueue = new LinkedList<String>();
+    private Queue<byte[]> sendQueue = new LinkedList<byte[]>();
     private Object objLockReceiveQueue = new Object();
-    private Queue<String> receiveQueue = new LinkedList<String>();
+    private Queue<byte[]> receiveQueue = new LinkedList<byte[]>();
 
     private Socket socket;
     private InputStream in;
@@ -41,6 +41,17 @@ public class TcpClient extends Thread{
 
     public void send(String data){
         synchronized(objLockSendQueue){
+            try{
+                sendQueue.offer(data.getBytes("UTF-8"));
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void send(byte[] data){
+        synchronized(objLockSendQueue){
             sendQueue.offer(data);
         }
     }
@@ -59,7 +70,7 @@ public class TcpClient extends Thread{
             while(isRunning){
                 synchronized(objLockReceiveQueue){
                     if(!receiveQueue.isEmpty()){
-                        String msg = receiveQueue.poll();
+                        String msg = new String(receiveQueue.poll(), "UTF-8");
                         if (tcpHandlerProc != null){
                             tcpHandlerProc.onReceiveData(msg);
                         }
@@ -70,8 +81,8 @@ public class TcpClient extends Thread{
                 }
                 synchronized(objLockSendQueue){
                     if(!sendQueue.isEmpty()){
-                        String msg = sendQueue.poll();
-                        out.write(msg.getBytes());
+                        byte[] msg = sendQueue.poll();
+                        out.write(msg);
                         out.flush();
                     }
                 }
@@ -103,7 +114,7 @@ public class TcpClient extends Thread{
                 while(isReceiveThreadRunning && (len = in.read(buffer)) != -1){
                     synchronized(objLockReceiveQueue){
                         String message = new String(buffer, 0, len, "UTF-8");
-                        receiveQueue.offer(message);
+                        receiveQueue.offer(message.getBytes());
                     }
                 }
             }

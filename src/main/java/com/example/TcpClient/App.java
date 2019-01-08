@@ -72,9 +72,25 @@ public class App implements ITcpHandlerProc
 
         DEVICE_ID = args[1];
 
-        String onLineMessage = "{\"MessageHeader\":{\"MessageType\":\"DeviceOnline\",\"RequestId\":\"unused\",\"DeviceId\":" + DEVICE_ID + "}}";
-
-
+        //String onLineMessage = "{\"MessageHeader\":{\"MessageType\":\"DeviceOnline\",\"RequestId\":\"unused\",\"DeviceId\":" + DEVICE_ID + "}}";
+        byte[] onLineMessage = null;
+        try{
+            byte[] deviceId = DEVICE_ID.getBytes("UTF-8");
+            onLineMessage = new byte[2+deviceId.length];
+            onLineMessage[0] = (byte)0x55;
+            onLineMessage[1] = (byte)deviceId.length;
+            System.arraycopy(deviceId, 0, onLineMessage, 2, deviceId.length);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+        
+        StringBuilder builder = new StringBuilder();
+        builder.append("send: ");
+        for (byte b:onLineMessage){
+            builder.append(String.format( "0x%x ",  b));
+        }
+        System.out.println(builder);
         TcpClient client = new TcpClient(null);
         client.send(onLineMessage);
 
