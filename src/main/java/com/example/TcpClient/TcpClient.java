@@ -6,6 +6,8 @@ import java.net.Socket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class TcpClient extends Thread{
     private final String SERVER_IP = "49.4.95.51";
@@ -30,9 +32,19 @@ public class TcpClient extends Thread{
 
     private Thread receiveThread;
 
+    private Timer HeartBeatTimer = new Timer();
+    private TimerTask HeartBeatTimerProc = new TimerTask(){
+        @Override
+        public void run(){
+            byte[] heartbeatMessage = new byte[]{(byte)0x5A, 0x0};
+            send(heartbeatMessage);
+        }
+    };
+
     public TcpClient(ITcpHandlerProc handler){
         tcpHandlerProc = handler;
         this.start();
+        HeartBeatTimer.schedule(HeartBeatTimerProc, 0, 10*1000);
     }
 
     private int BUFFER_SIZE = 4096;
@@ -70,12 +82,18 @@ public class TcpClient extends Thread{
             while(isRunning){
                 synchronized(objLockReceiveQueue){
                     if(!receiveQueue.isEmpty()){
-                        String msg = new String(receiveQueue.poll(), "UTF-8");
+                        byte[] message = receiveQueue.poll();
+                        StringBuilder builder = new StringBuilder();
+
+                        for (int i=0; i<message.length; i++){
+                            builder.append(String.format("0x%x ", message[i]));
+                        }
+                        
                         if (tcpHandlerProc != null){
-                            tcpHandlerProc.onReceiveData(msg);
+                            //tcpHandlerProc.onReceiveData(message);
                         }
                         else{
-                            System.out.println("receive message:"+msg);
+                            System.out.println("receive message:"+ builder);
                         }
                     }
                 }
@@ -113,8 +131,10 @@ public class TcpClient extends Thread{
             try{
                 while(isReceiveThreadRunning && (len = in.read(buffer)) != -1){
                     synchronized(objLockReceiveQueue){
+                        byte[] receiveMsg = new byte[len];
+                        System.arraycopy(buffer, 0, receiveMsg, 0, len);
                         String message = new String(buffer, 0, len, "UTF-8");
-                        receiveQueue.offer(message.getBytes());
+                        receiveQueue.offer(receiveMsg);
                     }
                 }
             }

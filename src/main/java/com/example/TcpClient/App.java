@@ -103,7 +103,7 @@ public class App implements ITcpHandlerProc
                 msg.put("Message", App.instance().MakeupMessage());
                 System.out.println("send message[" + counter + "]:" + msg.toJSONString());
                 counter++;
-                client.send(msg.toJSONString());
+                //client.send(msg.toJSONString());
                 post(SERVER_URL, msg.toJSONString());
                 synchronized(mainLoop){
                     mainLoop.wait(15000);
